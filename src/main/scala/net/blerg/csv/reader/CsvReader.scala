@@ -22,6 +22,8 @@ import scala.io._
 class CsvReader(file: File) {
   private val iterator = Source.fromFile(file).getLines()
 
+  private lazy val header = parseLine(iterator.next())
+
   @tailrec
   private def parseLine(remainingLine:List[Char], elementValue:String, insideQuotes:Boolean, escapeNext:Boolean, elements:Seq[String]): Seq[String] = remainingLine match {
     case Nil => elements :+ elementValue
@@ -44,6 +46,12 @@ class CsvReader(file: File) {
   private def parseLine(line:String): Seq[String] = parseLine(line.toList, "", false, false, Seq.empty)
 
   def forEach(f: Seq[String] => Unit) = iterator.foreach(line => f(parseLine(line)))
+
+  def forEachWithHeaders(f :Map[String,String] => Unit) = {
+    val headerToUse = header
+    iterator.foreach(line => f{headerToUse.zip(parseLine(line)).toMap})
+  }
+
 }
 
 object CsvReader {
